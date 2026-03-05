@@ -16,9 +16,9 @@ export class AppController {
         version: { type: 'string', example: '1.0.0' },
         description: { type: 'string', example: 'Backend для LEGO магазина' },
         docs: { type: 'string', example: '/docs' },
-        health: { type: 'string', example: '/health' }
-      }
-    }
+        health: { type: 'string', example: '/health' },
+      },
+    },
   })
   getInfo() {
     return {
@@ -49,9 +49,9 @@ export class AppController {
         status: { type: 'string', example: 'ok' },
         timestamp: { type: 'string', example: '2024-01-01T12:00:00.000Z' },
         uptime: { type: 'number', example: 123.45 },
-        database: { type: 'string', example: 'connected' }
-      }
-    }
+        database: { type: 'string', example: 'connected' },
+      },
+    },
   })
   async getHealth(): Promise<{
     status: string;
@@ -59,12 +59,11 @@ export class AppController {
     uptime: number;
     database: string;
   }> {
-    // Здесь можно добавить проверку подключения к БД
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      database: 'connected', // Предполагаем что БД подключена
+      database: 'connected',
     };
   }
 }
