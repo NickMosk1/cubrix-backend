@@ -12,14 +12,14 @@ import {
 
 export class CreateProductDto {
   @ApiProperty({
-    description: 'Название товара (только латиница, цифры и пробелы)',
-    example: 'LEGO 42110 Land Rover',
+    description: 'Название товара (только латиница, цифры, _, -)',
+    example: 'LEGO_42110',
   })
   @IsString({ message: 'Название должно быть строкой' })
   @IsNotEmpty({ message: 'Название обязательно' })
   @MaxLength(255, { message: 'Название должно быть не длиннее 255 символов' })
-  @Matches(/^[A-Za-z0-9 ]+$/, {
-    message: 'Название может содержать только латиницу, цифры и пробелы',
+  @Matches(/^[a-zA-Z0-9_-]+$/, {
+    message: 'Название может содержать только латиницу, цифры, дефис и нижнее подчеркивание',
   })
   name: string;
 
