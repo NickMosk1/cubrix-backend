@@ -25,6 +25,75 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Docker
+
+### Быстрый старт (API + MySQL + phpMyAdmin)
+
+```bash
+docker compose up --build -d
+```
+
+- API: `http://localhost:3000`
+- Swagger: `http://localhost:3000/docs`
+- Health: `http://localhost:3000/health`
+- phpMyAdmin: `http://localhost:8080` (логин `root`, пароль `root`)
+
+Остановить контейнеры:
+
+```bash
+docker compose down
+```
+
+Остановить и удалить volume с БД:
+
+```bash
+docker compose down -v
+```
+
+### Миграции в Docker
+
+- При старте контейнера `api` миграции запускаются автоматически.
+- Запустить миграции вручную:
+
+```bash
+docker compose exec api npm run migration:run
+```
+
+- Откатить последнюю миграцию:
+
+```bash
+docker compose exec api npm run migration:revert
+```
+
+### Локально без Docker (миграции)
+
+```bash
+npm install
+npm run migration:run:dev
+npm run start:dev
+```
+
+Для production-режима локально:
+
+```bash
+npm run build
+npm run migration:run
+npm run start:prod
+```
+
+Примечание: baseline-миграция создана идемпотентно для таблиц `users` и `products`, поэтому она подходит и для пустой БД, и для уже существующей базы с этими таблицами.
+Создать новую миграцию по изменениям в entity:
+
+```bash
+npm run migration:generate -- src/migrations/AddSomething
+```
+
+### Только API (без docker-compose)
+
+```bash
+docker build -t cubrix-api .
+docker run --rm -p 3000:3000 --env-file .env cubrix-api
+```
 ## Project setup
 
 ```bash
@@ -89,10 +158,12 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 ## Stay in touch
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- Author - [Kamil MyЕ›liwiec](https://twitter.com/kammysliwiec)
 - Website - [https://nestjs.com](https://nestjs.com/)
 - Twitter - [@nestframework](https://twitter.com/nestframework)
 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+
