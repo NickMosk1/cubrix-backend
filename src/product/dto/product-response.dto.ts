@@ -13,6 +13,9 @@ export class ProductResponseDto {
   @ApiProperty({ nullable: true })
   image: string | null;
 
+  @ApiProperty({ nullable: true })
+  collectionId: string | null;
+
   @ApiProperty()
   createdAt: Date;
 

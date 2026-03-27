@@ -1,42 +1,43 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Cubrix Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend-сервис на `NestJS` и `TypeORM` для магазина LEGO.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Что есть в проекте
 
-## Description
+- авторизация и JWT
+- пользователи и роли
+- товары
+- коллекции товаров
+- баланс и транзакции
+- Swagger-документация
+- MySQL и phpMyAdmin через Docker
+- миграции и сиды
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Требования
 
-## Docker
+- `Node.js 22+`
+- `npm`
+- `Docker` и `Docker Compose` для контейнерного запуска
 
-### Быстрый старт (API + MySQL + phpMyAdmin)
+## Быстрый старт через Docker
+
+Поднять все сервисы:
 
 ```bash
 docker compose up --build -d
 ```
 
+Доступные сервисы:
+
 - API: `http://localhost:3000`
 - Swagger: `http://localhost:3000/docs`
 - Health: `http://localhost:3000/health`
-- phpMyAdmin: `http://localhost:8080` (логин `root`, пароль `root`)
+- phpMyAdmin: `http://localhost:8080`
+
+Доступ к phpMyAdmin:
+
+- логин: `root`
+- пароль: `root`
 
 Остановить контейнеры:
 
@@ -44,126 +45,173 @@ docker compose up --build -d
 docker compose down
 ```
 
-Остановить и удалить volume с БД:
+Остановить контейнеры и удалить volume базы данных:
 
 ```bash
 docker compose down -v
 ```
 
-### Миграции в Docker
+## Что происходит при старте Docker
 
-- При старте контейнера `api` миграции запускаются автоматически.
-- Запустить миграции вручную:
+При `docker compose up`, `docker compose up -d` или `docker compose up --build` контейнер `api` выполняет один и тот же сценарий старта:
+
+1. запускает миграции
+2. проверяет, пустая ли база данных
+3. запускает сиды только если база пустая и `RUN_SEEDS=true`
+4. запускает API
+
+Важно:
+
+- миграции выполняются при каждом старте контейнера `api`
+- сиды выполняются только при первом старте пустой БД
+- если сделать `docker compose down -v`, том БД удалится, и при следующем старте сиды снова выполнятся
+
+По умолчанию в `docker-compose.yml` сиды включены:
+
+```yaml
+RUN_SEEDS: ${RUN_SEEDS:-true}
+```
+
+Если нужно отключить автозапуск сидов, задайте `RUN_SEEDS=false`.
+
+## Локальный запуск без Docker
+
+Установить зависимости:
+
+```bash
+npm install
+```
+
+Запустить миграции:
+
+```bash
+npm run migration:run:dev
+```
+
+Запустить сиды:
+
+```bash
+npm run seed:dev
+```
+
+Запустить приложение в development-режиме:
+
+```bash
+npm run start:dev
+```
+
+## Production-сценарий локально
+
+```bash
+npm run build
+npm run migration:run
+npm run seed
+npm run start:prod
+```
+
+## Миграции
+
+Запустить миграции локально:
+
+```bash
+npm run migration:run:dev
+```
+
+Откатить последнюю миграцию локально:
+
+```bash
+npm run migration:revert:dev
+```
+
+Запустить миграции внутри Docker:
 
 ```bash
 docker compose exec api npm run migration:run
 ```
 
-- Откатить последнюю миграцию:
+Откатить последнюю миграцию внутри Docker:
 
 ```bash
 docker compose exec api npm run migration:revert
 ```
 
-### Локально без Docker (миграции)
-
-```bash
-npm install
-npm run migration:run:dev
-npm run start:dev
-```
-
-Для production-режима локально:
-
-```bash
-npm run build
-npm run migration:run
-npm run start:prod
-```
-
-Примечание: baseline-миграция создана идемпотентно для таблиц `users` и `products`, поэтому она подходит и для пустой БД, и для уже существующей базы с этими таблицами.
-Создать новую миграцию по изменениям в entity:
+Сгенерировать новую миграцию:
 
 ```bash
 npm run migration:generate -- src/migrations/AddSomething
 ```
 
-### Только API (без docker-compose)
+## Сиды
+
+Локальный запуск сидов:
+
+```bash
+npm run seed:dev
+```
+
+Запуск сидов для собранной `dist`-версии:
+
+```bash
+npm run seed
+```
+
+Сиды добавляют данные для:
+
+- users
+- collections
+- products
+- balances
+- transactions
+
+Тестовые пользователи:
+
+- `admin / Admin123!`
+- `builder_anna / User123!`
+- `brick_max / User123!`
+
+## Полезные npm-скрипты
+
+- `npm run build` - сборка проекта
+- `npm run start` - обычный запуск
+- `npm run start:dev` - запуск в watch-режиме
+- `npm run start:prod` - запуск production-сборки
+- `npm run test` - unit-тесты
+- `npm run test:e2e` - e2e-тесты
+- `npm run test:cov` - тесты с coverage
+- `npm run lint` - eslint
+
+## Переменные окружения
+
+Основные переменные из [`.env.example`](./.env.example):
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `DB_DATABASE`
+- `DB_LOGGING`
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+- `PORT`
+- `NODE_ENV`
+- `RUN_SEEDS`
+
+## Структура сервисов Docker
+
+- `mysql` - база данных MySQL 8.4
+- `api` - NestJS backend
+- `phpmyadmin` - интерфейс для работы с БД
+
+## Только API без docker-compose
+
+Собрать образ:
 
 ```bash
 docker build -t cubrix-api .
+```
+
+Запустить контейнер:
+
+```bash
 docker run --rm -p 3000:3000 --env-file .env cubrix-api
 ```
-## Project setup
-
-```bash
-$ npm install
-```
-
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil MyЕ›liwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-
-

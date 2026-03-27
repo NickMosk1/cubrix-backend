@@ -34,6 +34,9 @@ export class Product {
   @Column({ type: 'varchar', length: 2048, nullable: true })
   image: string | null;
 
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  collectionId: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -36,6 +36,7 @@ services:
       DB_LOGGING: false
       JWT_SECRET: your_super_secret_key_here_change_in_production
       JWT_EXPIRES_IN: 7d
+      RUN_SEEDS: ${RUN_SEEDS:-true}
     ports:
       - "3000:3000"
 

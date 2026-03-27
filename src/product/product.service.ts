@@ -7,6 +7,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { GetProductsQueryDto } from './dto/get-products-query.dto';
 import { ProductListResponseDto } from './dto/product-list-response.dto';
+import { toProductResponseDto } from './product.mapper';
 
 @Injectable()
 export class ProductService {
@@ -15,10 +16,13 @@ export class ProductService {
     private readonly productRepository: Repository<Product>,
   ) {}
 
-  async create(createProductDto: CreateProductDto): Promise<ProductResponseDto> {
+  async create(
+    createProductDto: CreateProductDto,
+  ): Promise<ProductResponseDto> {
     const product = this.productRepository.create({
       ...createProductDto,
       image: createProductDto.image ?? null,
+      collectionId: null,
     });
 
     const savedProduct = await this.productRepository.save(product);
@@ -44,7 +48,7 @@ export class ProductService {
       hasNextPage: totalPages > 0 && page < totalPages,
       limit,
       offset,
-      items: products.map((product) => this.toResponseDto(product)),
+      items: products.map(toProductResponseDto),
     };
   }
 
@@ -58,7 +62,10 @@ export class ProductService {
     return this.toResponseDto(product);
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto): Promise<ProductResponseDto> {
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+  ): Promise<ProductResponseDto> {
     const product = await this.productRepository.findOne({ where: { id } });
 
     if (!product) {
@@ -83,13 +90,6 @@ export class ProductService {
   }
 
   private toResponseDto(product: Product): ProductResponseDto {
-    return {
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
-    };
+    return toProductResponseDto(product);
   }
 }

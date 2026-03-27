@@ -33,5 +33,6 @@ async function bootstrap() {
   console.log(`🚀 Приложение запущено на http://localhost:${port}`);
   console.log(`📚 Документация Swagger: http://localhost:${port}/docs`);
   console.log(`❤️ Health check: http://localhost:${port}/health`);
+  console.log(`PhpMyAdmin: http://localhost:8080/`);
 }
 bootstrap();
