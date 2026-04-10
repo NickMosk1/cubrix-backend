@@ -20,16 +20,18 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ProductService } from './product.service';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
-import { ProductResponseDto } from './dto/product-response.dto';
-import { ProductListResponseDto } from './dto/product-list-response.dto';
-import { GetProductsQueryDto } from './dto/get-products-query.dto';
+import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator';
+import { TransactionResponseDto } from 'src/balance/dto/transaction-response.dto';
 import { UserRole } from 'src/types/user';
+import { CreateProductDto } from './dto/create-product.dto';
+import { GetProductsQueryDto } from './dto/get-products-query.dto';
+import { ProductListResponseDto } from './dto/product-list-response.dto';
+import { ProductResponseDto } from './dto/product-response.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { ProductService } from './product.service';
 
 @ApiTags('Товары')
 @Controller('products')
@@ -44,7 +46,9 @@ export class ProductController {
   @ApiBody({ type: CreateProductDto })
   @ApiResponse({ status: 201, type: ProductResponseDto })
   @ApiResponse({ status: 403, description: 'Недостаточно прав' })
-  async create(@Body() createProductDto: CreateProductDto): Promise<ProductResponseDto> {
+  async create(
+    @Body() createProductDto: CreateProductDto,
+  ): Promise<ProductResponseDto> {
     return this.productService.create(createProductDto);
   }
 
@@ -60,8 +64,29 @@ export class ProductController {
   @ApiParam({ name: 'id', description: 'UUID товара' })
   @ApiResponse({ status: 200, type: ProductResponseDto })
   @ApiResponse({ status: 404, description: 'Товар не найден' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<ProductResponseDto> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ProductResponseDto> {
     return this.productService.findOne(id);
+  }
+
+  @Post(':id/purchase')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Купить товар' })
+  @ApiParam({ name: 'id', description: 'UUID товара' })
+  @ApiResponse({ status: 200, type: TransactionResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: 'Товар уже куплен или на балансе недостаточно средств',
+  })
+  @ApiResponse({ status: 404, description: 'Товар не найден' })
+  async purchase(
+    @GetUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<TransactionResponseDto> {
+    return this.productService.purchase(userId, id);
   }
 
   @Patch(':id')

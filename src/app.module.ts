@@ -7,6 +7,8 @@ import { AppController } from './app.controller';
 import { ProductModule } from './product/product.module';
 import { BalanceModule } from './balance/balance.module';
 import { CollectionModule } from './collection/collection.module';
+import { AchievementModule } from './achievement/achievement.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { CollectionModule } from './collection/collection.module';
     ProductModule,
     BalanceModule,
     CollectionModule,
+    AchievementModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [],

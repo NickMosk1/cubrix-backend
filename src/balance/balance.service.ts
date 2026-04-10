@@ -1,25 +1,25 @@
-import { 
-  Injectable, 
-  NotFoundException, 
+import {
   BadRequestException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { Transaction } from './entities/transaction.entity';
+import { DataSource, Repository } from 'typeorm';
 import { Balance } from './entities/balance.entity';
-import { TransactionType } from './interfaces/transaction-type.enum';
-import { DepositDto } from './dto/deposit.dto';
+import { Transaction } from './entities/transaction.entity';
 import { BalanceResponseDto } from './dto/balance-response.dto';
+import { DepositDto } from './dto/deposit.dto';
 import { TransactionResponseDto } from './dto/transaction-response.dto';
+import { TransactionType } from './interfaces/transaction-type.enum';
 
 @Injectable()
 export class BalanceService {
   constructor(
     @InjectRepository(Transaction)
-    private transactionRepository: Repository<Transaction>,
+    private readonly transactionRepository: Repository<Transaction>,
     @InjectRepository(Balance)
-    private balanceRepository: Repository<Balance>,
-    private dataSource: DataSource,
+    private readonly balanceRepository: Repository<Balance>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getBalance(userId: string): Promise<BalanceResponseDto> {
@@ -28,7 +28,6 @@ export class BalanceService {
     });
 
     if (!balance) {
-      // Если баланса нет, создаем новый с нулевым балансом
       balance = await this.createBalance(userId);
     }
 
@@ -40,23 +39,24 @@ export class BalanceService {
     };
   }
 
-  async deposit(userId: string, depositDto: DepositDto): Promise<TransactionResponseDto> {
+  async deposit(
+    userId: string,
+    depositDto: DepositDto,
+  ): Promise<TransactionResponseDto> {
     const { amount } = depositDto;
 
     if (amount <= 0) {
-      throw new BadRequestException('Сумма пополнения должна быть положительной');
+      throw new BadRequestException('Deposit amount must be positive');
     }
 
-    // Используем транзакцию базы данных для обеспечения целостности
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // 1. Получаем или создаем баланс пользователя
       let balance = await queryRunner.manager.findOne(Balance, {
         where: { userId },
-        lock: { mode: 'pessimistic_write' }, // Блокируем запись для избежания race condition
+        lock: { mode: 'pessimistic_write' },
       });
 
       if (!balance) {
@@ -67,29 +67,20 @@ export class BalanceService {
         balance = await queryRunner.manager.save(balance);
       }
 
-      // 2. Создаем транзакцию
       const transaction = queryRunner.manager.create(Transaction, {
         userId,
         type: TransactionType.DEPOSIT,
         amount,
       });
-      
+
       const savedTransaction = await queryRunner.manager.save(transaction);
 
-      // 3. Обновляем баланс
       balance.value += amount;
       await queryRunner.manager.save(balance);
 
-      // 4. Коммитим транзакцию
       await queryRunner.commitTransaction();
 
-      return {
-        id: savedTransaction.id,
-        userId: savedTransaction.userId,
-        type: savedTransaction.type,
-        amount: savedTransaction.amount,
-        createdAt: savedTransaction.createdAt,
-      };
+      return this.toTransactionResponseDto(savedTransaction);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -98,10 +89,12 @@ export class BalanceService {
     }
   }
 
-  // Метод для списания средств (будет использоваться при покупке товаров)
-  async withdraw(userId: string, amount: number): Promise<TransactionResponseDto> {
+  async withdraw(
+    userId: string,
+    amount: number,
+  ): Promise<TransactionResponseDto> {
     if (amount <= 0) {
-      throw new BadRequestException('Сумма списания должна быть положительной');
+      throw new BadRequestException('Withdrawal amount must be positive');
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -109,43 +102,33 @@ export class BalanceService {
     await queryRunner.startTransaction();
 
     try {
-      // 1. Получаем баланс с блокировкой
       const balance = await queryRunner.manager.findOne(Balance, {
         where: { userId },
         lock: { mode: 'pessimistic_write' },
       });
 
       if (!balance) {
-        throw new NotFoundException('Баланс пользователя не найден');
+        throw new NotFoundException('Balance not found');
       }
 
-      // 2. Проверяем достаточно ли средств
       if (balance.value < amount) {
-        throw new BadRequestException('Недостаточно средств на балансе');
+        throw new BadRequestException('Insufficient balance');
       }
 
-      // 3. Создаем транзакцию списания
       const transaction = queryRunner.manager.create(Transaction, {
         userId,
         type: TransactionType.PURCHASE,
         amount,
       });
-      
+
       const savedTransaction = await queryRunner.manager.save(transaction);
 
-      // 4. Обновляем баланс
       balance.value -= amount;
       await queryRunner.manager.save(balance);
 
       await queryRunner.commitTransaction();
 
-      return {
-        id: savedTransaction.id,
-        userId: savedTransaction.userId,
-        type: savedTransaction.type,
-        amount: savedTransaction.amount,
-        createdAt: savedTransaction.createdAt,
-      };
+      return this.toTransactionResponseDto(savedTransaction);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -154,28 +137,37 @@ export class BalanceService {
     }
   }
 
-  // Вспомогательный метод для создания баланса
   async createBalance(userId: string): Promise<Balance> {
     const balance = this.balanceRepository.create({
       userId,
       value: 0,
     });
+
     return this.balanceRepository.save(balance);
   }
 
-  // Метод для получения истории транзакций пользователя
   async getTransactionHistory(userId: string): Promise<TransactionResponseDto[]> {
     const transactions = await this.transactionRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
     });
 
-    return transactions.map(transaction => ({
+    return transactions.map((transaction) =>
+      this.toTransactionResponseDto(transaction),
+    );
+  }
+
+  private toTransactionResponseDto(
+    transaction: Transaction,
+  ): TransactionResponseDto {
+    return {
       id: transaction.id,
       userId: transaction.userId,
       type: transaction.type,
       amount: transaction.amount,
+      productId: transaction.productId ?? null,
+      collectionId: transaction.collectionId ?? null,
       createdAt: transaction.createdAt,
-    }));
+    };
   }
 }
